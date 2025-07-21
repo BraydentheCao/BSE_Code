@@ -97,8 +97,7 @@ def measureBallDistance(r, offsetP):
     R = 17.78 # Radius of the ball in cm
     D = R*f/r
     offsetR = offsetP*D/f
-    return D # Pythagorean theorem to find distance from camera to ball
-
+    return D 
 
 def runUltrasonicDistance(trigger, echo):
     GPIO.output(trigger, False)
@@ -319,7 +318,7 @@ def track_red_ball(frame):
             cv2.putText(frame, f"Ball distance (camera): {distanceFromBallCamera:.2f} | Ball distance (US): {distanceFromBallUltrasonic:.2f}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 2)
         else:
             rightMotor.forward(.5)
-            leftMotor.backward(.4)
+            leftMotor.backward(.5)
             print(f"Nothing detected: Turning at 0.5")    
 
         
