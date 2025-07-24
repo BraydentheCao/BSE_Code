@@ -14,6 +14,7 @@ picam2.start()
 def generate_frames():
     while True:
         frame = picam2.capture_array()
+        frame = cv2.flip(frame, 0)
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
 

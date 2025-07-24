@@ -43,8 +43,8 @@ def ultrasonicDistance(trigger, echo):
 
 try:
     while True:
-        distanceL = ultrasonicDistance(TRIGL, ECHOL)
-        distanceM = 0 #ultrasonicDistance(TRIGM, ECHOM)
+        distanceL = 0 #ultrasonicDistance(TRIGL, ECHOL)
+        distanceM = ultrasonicDistance(TRIGM, ECHOM)
         distanceR = 0 #ultrasonicDistance(TRIGR, ECHOR)
         
 
