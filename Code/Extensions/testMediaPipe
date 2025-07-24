@@ -1,65 +1,75 @@
 import cv2
 import mediapipe as mp
 import math
-
+import time
+from flask import Flask, Response
 
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
-
+app = Flask(__name__)
 cap = cv2.VideoCapture(0)
 
 # 5 and 8 for now
 
-def fingerLength(base,tip):
-    x_diff = base.x - tip.x
-    y_diff = base.y - tip.y
-    
-    return math.sqrt(x_diff ** 2 + y_diff ** 2)
+def analyze_finger(base,tip,height,width):
+    x = - (tip.x - base.x) * width
+    y = (base.y - tip.y) * height # Flipped because of Open CV coordinate system
 
-def fingerAngle(base,tip):
-    # Handles for the undefined values of cot
-    if base.x == tip.x: # 90
-        if tip.y > base.y:
-            return 90
-        else: # 270
-            return -90
+    print(f"x = {x}")
+    print(f"y = {y}")
 
-    x = tip.x - base.x
-    y = tip.y - base.y 
-    
-    return math.degrees(math.atan2(x,y))
-    
+    angle = math.degrees(math.atan2(x,y))
+    length = math.sqrt(x*x + y*y)
 
-while cap.isOpened():
-    ret, frame = cap.read()
-    if not ret:
-        continue
+    return length, angle
 
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = hands.process(frame_rgb)
-    
-    
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-            # insert code for index finder direction here
-            # Hint: use the x and y coordinates of the joints :D
-            mp.solutions.drawing_utils.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-        # Add code here
-        five = results.multi_hand_landmarks[5]
-        eight = results.multi_hand_landmarks[8]
+def gen_frames():
+    while True:
+        success, frame = cap.read()
+        if not success:
+            break
+
+        h, w, _ = frame.shape
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = hands.process(frame_rgb)
         
-        angle = fingerLength(result)
-        length = fingerLength(five,eight)
+        
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks: # Draw hands
+                mp.solutions.drawing_utils.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            
+            hand = results.multi_hand_landmarks[0]
+            five = hand.landmark[5]
+            eight = hand.landmark[8]
+            zero = hand.landmark[0]
+            
+            time.sleep(0.25) # To slow the frame rate
 
-    cv2.imshow('Finger Direction Recognition', frame)
+            lengthIndex, angleIndex = analyze_finger(five,eight,h,w)
+            lengthReference, _ = analyze_finger(zero,five,h,w)
+            relativeLength = lengthIndex / lengthReference
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+            #print(f"Angle: {angleIndex}")
+            #print(f"Length: {lengthIndex}")
+            #print(f"Relative length: {relativeLength}")
 
-cap.release()
-cv2.destroyAllWindows()
+            # Calculate by relative size
 
+        frame = cv2.flip(frame, 1)
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()  # Convert NumPy array to raw bytes
+
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+@app.route('/')
+def video_feed():
+    return Response(gen_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')
 
 
 """
@@ -94,4 +104,56 @@ Pinky:
 18: PINKY_PIP
 19: PINKY_DIP
 20: PINKY_TIP
+"""
+
+
+"""
+Challenges:
+
+1) Getting the media pipe to work and record angle, didn't understand exactly 
+how it works before, now I do
+
+Before: results.multi_hand_landmarks[5] to try and access the 5th node
+What this actual does: Tries to access the fifth hand (tech 6th)
+
+After: results.multi_hand_landmarks[0].landmark[5]
+multi_hand_landmarks has a list of objects that contain an entire hand's 
+worth of information. If say you have 2 hands in frame, there will be 
+two hand objects in the multi_hand_landmarks list. In each hand, there are 
+21 landmarks (aka nodes) that denote every joint in your hand
+
+2) The coordinate system is actually flipped in OpenCV along (and only along)
+the y axis, hence the flipped x and y calculations in both the length and angle
+functions 
+
+3) Since the x and y positions of each node is calculated based on its size 
+relative to the image (likely using pixels), there is the issue of speed changing
+when you move your hand closer or further away from the camera. For that reason,
+speed is based off of the size of the index finger relative to one of the joints 
+on the hand, thus negating the issue of depth changing speed 
+
+4) Additionally, since length is based off of the relative distance between the 
+nodes of my hand compared to size of the frame, that means pointing my finger up 
+vs pointing my finger left will actually cause the distance to "change" even thought 
+it is still the same, as this "distance" is again, relative. This makes sense as the 
+frame is much longer than it is tall, therefore if my finger is pointing straight up, it 
+covers a larger portion of the frame. 
+
+Funny enough, this actually interferes with the angle calculation too, just in a more subtle 
+way. The values are skewed, meaning it is impossible to calculate the correct value
+
+5) An error I avoided early was keeping in mind the fact that I was using arctan to 
+calculate angle, meaning if the x val was zero, then it would cause an error, and so I 
+updated to code to include it. However, I realized I actually didn't need it since atan2(x,y),
+which is the function I'm using, already accounts for that
+
+"""
+
+"""
+Cool things I learn:
+
+You can actually return multiple values from a function (which I guess in hindsight 
+should have been pretty obvious lol), and that is also why sometimes you see 
+x, y, _ = this.function(). The _ is just a throwaway variable that we don't care about
+
 """

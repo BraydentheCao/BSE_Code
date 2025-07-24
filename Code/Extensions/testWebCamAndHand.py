@@ -10,8 +10,8 @@ hands = mp_hands.Hands()
 
 def gen_frames():
     while True:
-        ret, frame = cap.read()
-        if not ret:
+        success, frame = cap.read()
+        if not success:
             break
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -23,9 +23,13 @@ def gen_frames():
                 # Hint: use the x and y coordinates of the joints :D
                 mp.solutions.drawing_utils.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-        #cv2.imshow('Finger Direction Recognition', frame)
+
+        # Encode processed frame as JPEG
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()  # Convert NumPy array to raw bytes
+
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 @app.route('/')
 def video_feed():
