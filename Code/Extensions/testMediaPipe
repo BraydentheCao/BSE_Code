@@ -3,7 +3,7 @@ import mediapipe as mp
 import math
 import time
 from flask import Flask, Response
-
+import json # For sending information via web sockets]
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
@@ -147,13 +147,34 @@ calculate angle, meaning if the x val was zero, then it would cause an error, an
 updated to code to include it. However, I realized I actually didn't need it since atan2(x,y),
 which is the function I'm using, already accounts for that
 
+6) Another thing I found out was that you want to avoid adding the with socket... code completely 
+nested inside the while statement bc essentially that just constantly opens and closes the socket 
+which is really inefficient 
+
+7) This problem is a little more complicated (props to chatgpt for helping here). Essentially is it 
+because of the "solution" to the last problem, which is having the web socket send json information
+and have the http requests nested within each other, which causes issues. This is because the http 
+request is nearly instant, whereas the web socket takes a little bit of time. Instead, the solution
+is to add a queue that queues json data through the websocket INDEPENDENT of the information
+
+8) This then led me to wonder if the sent information would actually cause a backup of stored info,
+as new info is entering the queue is faster than it is leaving 
+
+9) So apparently that wasn't even the issue, and the frame rate between the web socket and http 
+request that was causing issues, the frame rate matches exactly. The real problem was conflicting calls.
+Basically, there is a line in the web socket code, the ".recv(1024)" line, where essentially the code 
+will just wait there and block the rest of the code from running. The solution was to add threading, or 
+essentially running two different processes at once in parallel and independent of each other, that way
+the web socket can wait for received info without causing the rest of the code to wait for it
 """
 
 """
-Cool things I learn:
+Cool things I learned:
 
 You can actually return multiple values from a function (which I guess in hindsight 
 should have been pretty obvious lol), and that is also why sometimes you see 
 x, y, _ = this.function(). The _ is just a throwaway variable that we don't care about
 
+When sending json data via web sockets, you actually have to process ALL the sent data otherwise there will 
+be an error of "Extra data" (Acc no I lied I forgot to clear the buffer between each frame)
 """
