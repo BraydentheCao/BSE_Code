@@ -16,8 +16,8 @@ def analyze_finger(base,tip,height,width):
     x = - (tip.x - base.x) * width
     y = (base.y - tip.y) * height # Flipped because of Open CV coordinate system
 
-    print(f"x = {x}")
-    print(f"y = {y}")
+    #print(f"x = {x}")
+    #print(f"y = {y}")
 
     angle = math.degrees(math.atan2(x,y))
     length = math.sqrt(x*x + y*y)
@@ -52,7 +52,7 @@ def gen_frames():
 
             #print(f"Angle: {angleIndex}")
             #print(f"Length: {lengthIndex}")
-            #print(f"Relative length: {relativeLength}")
+            print(f"Relative length: {relativeLength}")
 
             # Calculate by relative size
 

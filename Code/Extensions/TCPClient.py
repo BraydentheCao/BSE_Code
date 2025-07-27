@@ -27,6 +27,7 @@ hands = mp_hands.Hands()
 cap = cv2.VideoCapture(0)
 data_queue = queue.Queue()
 frameCounter = 0
+handOutFrameCounter = 0
 buffer = b""
 
 def socket_client_thread():
@@ -40,10 +41,12 @@ def socket_client_thread():
             try:
                 json_message = json.dumps(message).encode('utf-8')
                 s.sendall(json_message)
+                print("sent the msg")
                 
                 ack = s.recv(1024)
                 print(f"[SOCKET] ACK received:")
                 
+                """
                 buffer += ack
 
                 decoded = buffer.decode("utf-8")
@@ -55,6 +58,7 @@ def socket_client_thread():
 
                 print(f"Received Relative Length: {relativeLength:.3f}")
                 print(f"Received Angle Index: {angleIndex:.3f}")
+                """
 
                 buffer = b""
             except Exception as e:
@@ -79,6 +83,7 @@ def gen_frames():
     global frameCounter # This is check how much this will lag behind
     while True:
         frameCounter += 1
+        handOutFrameCounter = 0
         success, frame = cap.read()
         if not success:
             break
@@ -107,18 +112,42 @@ def gen_frames():
             print(f"Angle: {angleIndex:.3f}")
             #print(f"Length: {lengthIndex}")
             
+            """
             while not data_queue.empty():
                 try:
                     data_queue.get_nowait()
                 except queue.Empty:
                     break
-
+            """
             # Create and send JSON message
+            
             data_queue.put({
                 "relativeLength": relativeLength,
                 "angleIndex": angleIndex,
                 "frameCounter": frameCounter
             })
+        else:
+            
+            # If the hand has been out of frame long enough, then return 0 for all values. That should stop the robot
+            data_queue.put({
+                    "relativeLength": 0,
+                    "angleIndex": 0,
+                    "frameCounter": frameCounter
+                })
+            
+
+            """
+            handOutFrameCounter += 1
+            frameCounter += 1
+            if handOutFrameCounter > 5:
+                data_queue.put({
+                    "relativeLength": 0,
+                    "angleIndex": 0,
+                    "frameCounter": frameCounter
+                })
+            """
+
+            
             
         frame = cv2.flip(frame, 1)
         ret, buffer = cv2.imencode('.jpg', frame)
