@@ -1,23 +1,143 @@
 from flask import Flask, Response, render_template_string
-import cv2, time, math, socket, json
-import numpy as numpy
+import cv2, time, math, socket, json, queue
+import numpy as np
+from picamera2 import Picamera2
+from gpiozero import Motor
+import RPi.GPIO as GPIO
+
 
 """
- _______                                                 __ 
+ _______                                                 __
 /       \                                               /  |
-$$$$$$$  |  ______    _______   ______          ______  $$/ 
+$$$$$$$  |  ______    _______   ______          ______  $$/
 $$ |__$$ | /      \  /       | /      \        /      \ /  |
 $$    $$<  $$$$$$  |/$$$$$$$/ /$$$$$$  |      /$$$$$$  |$$ |
 $$$$$$$  | /    $$ |$$      \ $$ |  $$ |      $$ |  $$ |$$ |
 $$ |  $$ |/$$$$$$$ | $$$$$$  |$$ |__$$ |      $$ |__$$ |$$ |
 $$ |  $$ |$$    $$ |/     $$/ $$    $$/       $$    $$/ $$ |
-$$/   $$/  $$$$$$$/ $$$$$$$/  $$$$$$$/        $$$$$$$/  $$/ 
+$$/   $$/  $$$$$$$/ $$$$$$$/  $$$$$$$/        $$$$$$$/  $$/
                               $$ |            $$ |          
                               $$ |            $$ |          
-                              $$/             $$/           
+                              $$/             $$/          
 """
 
-HOST = ""  # Standard loopback interface address (localhost)
+leftMotor = Motor(13,22)  # GPIO12 & GPIO16
+rightMotor = Motor(12,23) # GPIO13 & GPIO19
+
+def motorControl(length,angle):
+    #angleRad = math.radians(angle)
+    S_MULT = 0.75 # Suppression multiplier
+   
+    if length == 0 and angle == 0: # If there are not hands in frame
+        return 0,0
+
+    if length > 1: # Prevent a length over 1
+        length = 1
+    if length < 0.35: # Add threshold speed
+        length = 0.35
+   
+    length = length*0.3 + 0.35
+
+    #angle = int(angle/5 + 2.5) * 5
+   
+    leftSpeed = 0
+    rightSpeed = 0
+
+    # LEFT TURN
+
+    # Angle betw -8 and 8
+    if angle >= -8 and angle < 8:
+        leftSpeed = length
+        rightSpeed = length
+
+    # Angle betw 8 and 85
+    if angle >= 8 and angle < 95:
+        leftSpeed = length
+       
+        if angle >= 8 and angle <= 40: # When right turning, the right motor slows down
+            rightSpeed = length * (-0.015625*angle+1)
+       
+        elif angle > 40 and angle < 50:
+            rightSpeed = 0
+
+        elif angle >= 50 and angle < 85:
+            leftSpeed = leftSpeed*0.8
+            rightSpeed = length * (-0.00857143*angle-0.0714286)
+
+    # Angle betw 85 and 95
+
+
+    if angle >= 85 and angle < 95:
+        leftSpeed = length
+        rightSpeed = -length
+       
+   
+    # Angle betw 95 and 172
+    if angle >= 95 and angle < 172:
+        leftSpeed = -length
+       
+        if angle >= 95 and angle <= 130: # When right turning, the right motor slows down
+            rightSpeed = length * (0.0142857*angle-2.35714)
+       
+        elif angle > 130 and angle < 140:
+            rightSpeed = 0
+
+        elif angle >= 140 and angle <= 172:
+            leftSpeed = leftSpeed*.8
+            rightSpeed = length * (0.009375*angle-0.8125)
+
+
+    # Angle is > 172 or < -172
+    if angle > 172 or angle < -172:
+        rightSpeed = -length
+        leftSpeed = -length
+
+
+    # RIGHT TURN
+
+    # Angle betw -8 and -95
+    if angle <= -8 and angle > -95:
+        print("right turn")
+        rightSpeed = length
+       
+        if angle <= -8 and angle >= -40: # When right turning, the right motor slows down
+            leftSpeed = length * (0.015625*angle+1.125)
+       
+        elif angle < -40 and angle > -50:
+            leftSpeed = 0
+
+        elif angle <= -50 and angle > -85:
+            rightSpeed = rightSpeed*0.8
+            leftSpeed = length * (-0.00571429*angle+0.314286)
+
+    # Angle betw -85 and -95
+
+
+    if angle <= -85 and angle > -95:
+        rightSpeed = length
+        leftSpeed = -length
+       
+   
+    # Angle betw -95 and -172
+    if angle <= -95 and angle > -172:
+        rightSpeed = -length
+       
+        if angle <= -95 and angle >= -130: # When right turning, the right motor slows down
+            leftSpeed = length * (-0.0142857*angle-2.35714)
+       
+        elif angle < -130 and angle > -140:
+            leftSpeed = 0
+
+        elif angle <= -140 and angle >= -172:
+            rightSpeed = rightSpeed*.8
+            leftSpeed = length * (-0.009375*angle-0.8125)
+   
+
+
+    return leftSpeed, rightSpeed
+
+
+HOST = ''  # Standard loopback interface address (localhost)
 PORT = 65432  # Port to listen on (non-privileged ports are > 1023)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -30,11 +150,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         buffer = b""
         while True:
             data = conn.recv(1024)
-            if not data:
-                break
             buffer += data
+            if not data:
+                print("hi")
+                break
+            # buffer += data # This was for echoing info back
+            # Right now we want something
 
             try:
+               
                 # Try to decode a full JSON message
                 decoded = buffer.decode("utf-8")
                 message = json.loads(decoded)
@@ -44,22 +168,49 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 angleIndex = message["angleIndex"]
                 frameCounter = message["frameCounter"]
 
-                print(f"Relative Length: {relativeLength:.3f}")
-                print(f"Angle Index: {angleIndex:.3f}")
-                print(f"Frame counter: {frameCounter:.3f}")
+               
 
-                # Send an acknowledgment (optional)
+                #time.sleep(0.5)
+                leftSpeed, rightSpeed = motorControl(relativeLength,angleIndex)
 
-                response = {
-                    "angleIndex": angleIndex,
-                    "relativeLength": relativeLength,
-                }
-                response_bytes = json.dumps(response).encode("utf-8")
-                conn.sendall(response_bytes)
-                
+                leftSpeed = round(leftSpeed, 3)
+                rightSpeed = round(rightSpeed, 3)
+
+
+                print(f"Angle: {angleIndex}")
+                print(f"Left speed: {leftSpeed}")
+                print(f"Right speed: {rightSpeed}")
+
+
+                # Account for negative speed
+                if leftSpeed > 0:
+                    leftMotor.forward(leftSpeed)
+                elif leftSpeed < 0:
+                    leftMotor.backward(-leftSpeed)
+                else:
+                    leftMotor.stop()
+
+
+                if rightSpeed > 0:
+                    rightMotor.forward(rightSpeed)
+                elif rightSpeed < 0:
+                    rightMotor.backward(-rightSpeed)
+                else:
+                    rightMotor.stop()
+
+                #print(f"Relative Length: {relativeLength:.3f}")
+                #print(f"Angle Index: {angleIndex:.3f}")
+                #print(f"Frame counter: {frameCounter:.3f}")
+
+               
+                #Send an acknowledgment (optional)
+               
+
+                conn.sendall(b"Successful")
+               
+               
 
                 buffer = b""  # Clear buffer for next message
             except json.JSONDecodeError:
                 # Partial message received, wait for more data
                 continue
-
