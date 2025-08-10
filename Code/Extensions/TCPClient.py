@@ -46,14 +46,14 @@ frameCounter = 0
 handOutFrameCounter = 0
 buffer = b""
 
+
+"""
+Runs in a background thread to continuously send hand gesture data
+from a queue to the Raspberry Pi server over a TCP socket and 
+receive acknowledgments.
+"""
+
 def socket_client_thread():
-  
-    """
-    Runs in a background thread to continuously send hand gesture data
-    from a queue to the Raspberry Pi server over a TCP socket and 
-    receive acknowledgments.
-    """
-  
     global buffer
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
@@ -87,17 +87,15 @@ def socket_client_thread():
             except Exception as e:
                 print(f"[SOCKET ERROR] {e}")
 
-threading.Thread(target=socket_client_thread, daemon=True).start()
+threading.Thread(target=socket_client_thread, daemon=True).start() # Makes the socket_client a seperate thread
 
 
+"""
+Calculates the length and angle of the vector between two hand landmarks,
+adjusting for the image size and coordinate system.
+Returns the length and angle in degrees.
+"""
 def analyze_finger(base,tip,height,width):
-  
-    """
-    Calculates the length and angle of the vector between two hand landmarks,
-    adjusting for the image size and coordinate system.
-    Returns the length and angle in degrees.
-    """
-  
     x = - (tip.x - base.x) * width
     y = (base.y - tip.y) * height # Flipped because of Open CV coordinate system
 
@@ -109,14 +107,12 @@ def analyze_finger(base,tip,height,width):
 
     return length, angle
 
+"""
+Captures webcam frames, processes hand landmarks with MediaPipe,
+calculates gesture metrics, sends data to the queue,
+and yields encoded frames for live video streaming via Flask.
+"""
 def gen_frames():
-
-    """
-    Captures webcam frames, processes hand landmarks with MediaPipe,
-    calculates gesture metrics, sends data to the queue,
-    and yields encoded frames for live video streaming via Flask.
-    """
-  
     global frameCounter # This is to check how much this will lag behind
     while True:
         frameCounter += 1
