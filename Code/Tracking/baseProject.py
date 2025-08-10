@@ -8,11 +8,14 @@ import RPi.GPIO as GPIO
 import time
 import math
 
-# L298n
-# rightMotor = Motor(forward=17, backward=27, enable=12, pwm=True)
-# leftMotor = Motor(forward=22, backward=23, enable=13, pwm=True)
+"""
+My base project - A complete Ball Tracking Robot
 
-# L9110S
+Raspberry Pi Flask app that captures live video to detect and track a red ball using OpenCV.
+Uses PID control and ultrasonic sensors to steer motors for autonomous ball following.
+Streams annotated video to a web interface for real-time monitoring.
+"""
+
 leftMotor = Motor(12,23)  # GPIO12 & GPIO16
 rightMotor = Motor(13,22) # GPIO13 & GPIO19
 
@@ -52,9 +55,10 @@ prevErrorD = 0
 curErrorD = 0
 iErrorD = 0
 
-'''
-Takes in an offset and target, returns the speed of the turn speed needed using PID control
-'''
+"""
+PID controller to compute turn speed based on ball's horizontal offset.
+Returns a motor speed value to adjust robot's heading towards the ball.
+"""
 def ballAnglePID(current, target):
     global prevErrorA, curErrorA, iErrorA
     
@@ -91,7 +95,12 @@ def ballAnglePID(current, target):
         print("out of bounds")
         return 0
 
-        
+
+"""
+Estimates the distance from the ball to the camera using ball radius in pixels.
+r: radius of ball in pixels
+offsetP: pixel offset from center (unused in calculation except adjustment)
+"""  
 def measureBallDistance(r, offsetP):
     f = 290.562
     R = 17.78 # Radius of the ball in cm
@@ -99,6 +108,10 @@ def measureBallDistance(r, offsetP):
     offsetR = offsetP*D/f
     return D 
 
+"""
+Measures distance using an ultrasonic sensor connected to trigger and echo pins.
+Returns distance in centimeters.
+"""
 def runUltrasonicDistance(trigger, echo):
     GPIO.output(trigger, False)
     time.sleep(0.0001)
@@ -123,7 +136,11 @@ centerCountFrames = 0
 floorForwardCountFrames = 0
 
 
-
+"""
+Detects a red ball in the given frame using HSV thresholding, calculates its position and radius,
+and controls motors to track and approach the ball using PID and distance measurements.
+Draws contours and tracking info on the frame.
+"""
 def track_red_ball(frame):
     global distanceFromBallCamera, distanceFromBallUltrasonic, centerCountFrames, floorForwardCountFrames
 
