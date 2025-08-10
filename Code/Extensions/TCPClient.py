@@ -139,7 +139,11 @@ def gen_frames():
             })
         else:
             
-            # If the hand has been out of frame long enough, then return 0 for all values. That should stop the robot
+            """ 
+            If the hand is out of frame, then return 0 for all values. 
+            That should stop the robot, as the TCPServer handles the values accordingly 
+            """
+            
             data_queue.put({
                     "relativeLength": 0,
                     "angleIndex": 0,
