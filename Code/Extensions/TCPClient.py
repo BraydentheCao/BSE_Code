@@ -29,8 +29,9 @@ $$    $$/ $$    $$/ $$ | $$ | $$ |$$    $$/ $$    $$/   $$  $$/ $$       |$$ |
                                   $$/                                               
 """
 
-HOST = "192.168.68.82"  # The server's hostname or IP address
-PORT = 65432  # The port used by the server
+HOST = "192.168.68.82"  # The server's hostname or IP address 
+PORT = 65432  # The port used by the server 
+#*server = raspberry pi
 
 app = Flask(__name__)
 mp_hands = mp.solutions.hands
