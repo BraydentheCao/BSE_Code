@@ -13,9 +13,8 @@ finger compared to a reference finger segment, then sends this data as JSON to a
 (my raspberry pi) via a TCP socket running on a specified IP and port. The app streams the video 
 frames to a web client, allowing live viewing of hand tracking with MediaPipe's visual landmarks 
 (points). Threading and queues manage asynchronous sending of gesture data to the server.
-"""
 
-"""
+
   ______                                                 __                         
  /      \                                               /  |                        
 /$$$$$$  |  ______   _____  ____    ______   __    __  _$$ |_     ______    ______  
