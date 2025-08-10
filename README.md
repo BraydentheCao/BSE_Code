@@ -1,10 +1,13 @@
 # BSE_Code
 All my code that exists on the rasp pi
 
-Testing is mostly milestone 1
 
-Tracking is milestone 2
+In the code folder:
 
-Extensions is milestone 3
+Testing folder is mostly milestone 1 - Ball tracking algorithm is called baseProject.py
+
+Tracking folder is milestone 2
+
+Extensions is milestone 3 - Hand gesture control algorithm is called TCPServer.py & TCPClient.py
 
 Commits are only from milestone 3 since I made this after milestone 2
