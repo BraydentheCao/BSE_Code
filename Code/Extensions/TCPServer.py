@@ -13,6 +13,16 @@ various different motor speeds for turning and moving. It controls the motors vi
 the gpiozero library. The program continuously accepts incoming connections, decodes JSON data, adjusts 
 motor speeds accordingly, and sends back a "successful" message.
 
+Here is how the algorithm moves the robot based on finger angle:
+ 0 to 8 deg - Drive forward
+ 8 to 50 deg - Forward pivot turn right
+ 50 to 95 deg - Foward tank turn right
+ 95 to 140 deg - Reverse pivot turn right
+ 140 to 172 deg - Reverse tank turn right
+ 172 to 180 deg - Drive backward
+
+Exact same for 0 to -180, only the robot turns left
+
  _______                                                 __
 /       \                                               /  |
 $$$$$$$  |  ______    _______   ______          ______  $$/
