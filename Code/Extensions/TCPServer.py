@@ -27,8 +27,9 @@ $$/   $$/  $$$$$$$/ $$$$$$$/  $$$$$$$/        $$$$$$$/  $$/
                               $$/             $$/          
 """
 
-leftMotor = Motor(13,22)  # GPIO12 & GPIO16
-rightMotor = Motor(12,23) # GPIO13 & GPIO19
+# Initialize the motors to specified GPIO and PWM pins
+leftMotor = Motor(13,22) 
+rightMotor = Motor(12,23)
 
 def motorControl(length,angle):
  
