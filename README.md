@@ -8,6 +8,6 @@ Testing folder is mostly milestone 1 - Ball tracking algorithm is called basePro
 
 Tracking folder is milestone 2
 
-Extensions is milestone 3 - Hand gesture control algorithm is called TCPServer.py & TCPClient.py
+Extensions folder is milestone 3 - Hand gesture control algorithm is called TCPServer.py & TCPClient.py
 
 Commits are only from milestone 3 since I made this after milestone 2
