@@ -14,6 +14,10 @@ finger compared to a reference finger segment, then sends this data as JSON to a
 frames to a web client, allowing live viewing of hand tracking with MediaPipe's visual landmarks 
 (points). Threading and queues manage asynchronous sending of gesture data to the server.
 
+The relative finger length enables the following hand controls:
+Moving index finger forward and backward (relative to the camera) - Robot slows down/speeds up
+Moving index finger left and right - Robot turns left and right
+
 
   ______                                                 __                         
  /      \                                               /  |                        
