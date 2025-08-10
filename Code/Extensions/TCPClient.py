@@ -4,6 +4,18 @@ import numpy as numpy
 import mediapipe as mp
 
 """
+This code is run on my computer, the TCPServer.py code is run on my raspberry pi. (The raspberry
+pi is the server, my computer is the client)
+
+This Flask application captures live video from a webcam and uses MediaPipe Hands to detect and 
+analyze hand gestures in real time. It calculates the relative length and angle of the index 
+finger compared to a reference finger segment, then sends this data as JSON to a separate server 
+(my raspberry pi) via a TCP socket running on a specified IP and port. The app streams the video 
+frames to a web client, allowing live viewing of hand tracking with MediaPipe's visual landmarks 
+(points). Threading and queues manage asynchronous sending of gesture data to the server.
+"""
+
+"""
   ______                                                 __                         
  /      \                                               /  |                        
 /$$$$$$  |  ______   _____  ____    ______   __    __  _$$ |_     ______    ______  
