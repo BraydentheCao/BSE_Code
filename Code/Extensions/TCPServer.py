@@ -5,8 +5,14 @@ from picamera2 import Picamera2
 from gpiozero import Motor
 import RPi.GPIO as GPIO
 
-
 """
+This code runs on my Raspberry Pi and controls a two-motor robot using hand gesture data received via a
+TCP socket connection. It listens for JSON messages containing the relative length and angle of the index
+finger, computes motor speeds with a custom motorControl function that maps finger angle and length to 
+various different motor speeds for turning and moving. It controls the motors via GPIO and PWM pins using
+the gpiozero library. The program continuously accepts incoming connections, decodes JSON data, adjusts 
+motor speeds accordingly, and sends back a "successful" message.
+
  _______                                                 __
 /       \                                               /  |
 $$$$$$$  |  ______    _______   ______          ______  $$/
@@ -25,10 +31,18 @@ leftMotor = Motor(13,22)  # GPIO12 & GPIO16
 rightMotor = Motor(12,23) # GPIO13 & GPIO19
 
 def motorControl(length,angle):
+ 
+    """
+    Calculate motor speeds based on finger length and angle.
+    - length: relative finger length (0 to 1)
+    - angle: finger angle in degrees (-180 to 180)
+    Returns (leftSpeed, rightSpeed) motor speeds.
+    """
+ 
     #angleRad = math.radians(angle)
     S_MULT = 0.75 # Suppression multiplier
    
-    if length == 0 and angle == 0: # If there are not hands in frame
+    if length == 0 and angle == 0: # If there are not hands in frame, motor will stop
         return 0,0
 
     if length > 1: # Prevent a length over 1
