@@ -43,6 +43,13 @@ handOutFrameCounter = 0
 buffer = b""
 
 def socket_client_thread():
+  
+    """
+    Runs in a background thread to continuously send hand gesture data
+    from a queue to the Raspberry Pi server over a TCP socket and 
+    receive acknowledgments.
+    """
+  
     global buffer
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
@@ -80,6 +87,13 @@ threading.Thread(target=socket_client_thread, daemon=True).start()
 
 
 def analyze_finger(base,tip,height,width):
+  
+    """
+    Calculates the length and angle of the vector between two hand landmarks,
+    adjusting for the image size and coordinate system.
+    Returns the length and angle in degrees.
+    """
+  
     x = - (tip.x - base.x) * width
     y = (base.y - tip.y) * height # Flipped because of Open CV coordinate system
 
@@ -92,7 +106,14 @@ def analyze_finger(base,tip,height,width):
     return length, angle
 
 def gen_frames():
-    global frameCounter # This is check how much this will lag behind
+
+    """
+    Captures webcam frames, processes hand landmarks with MediaPipe,
+    calculates gesture metrics, sends data to the queue,
+    and yields encoded frames for live video streaming via Flask.
+    """
+  
+    global frameCounter # This is to check how much this will lag behind
     while True:
         frameCounter += 1
         handOutFrameCounter = 0
