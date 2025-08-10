@@ -41,15 +41,13 @@ $$/   $$/  $$$$$$$/ $$$$$$$/  $$$$$$$/        $$$$$$$/  $$/
 leftMotor = Motor(13,22) 
 rightMotor = Motor(12,23)
 
+"""
+Calculate motor speeds based on finger length and angle.
+- length: relative finger length (0 to 1)
+- angle: finger angle in degrees (-180 to 180)
+Returns (leftSpeed, rightSpeed) motor speeds.
+"""
 def motorControl(length,angle):
- 
-    """
-    Calculate motor speeds based on finger length and angle.
-    - length: relative finger length (0 to 1)
-    - angle: finger angle in degrees (-180 to 180)
-    Returns (leftSpeed, rightSpeed) motor speeds.
-    """
- 
     #angleRad = math.radians(angle)
     S_MULT = 0.75 # Suppression multiplier
    
